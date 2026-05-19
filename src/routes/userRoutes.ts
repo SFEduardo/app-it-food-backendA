@@ -1,21 +1,19 @@
-import express from "express";
+import { Router } from "express";
 import {
   createUser,
-  updateUser,
   getUser,
+  updateUser,
 } from "../controllers/userController.js";
 import { jwtCheck, jwtParse } from "../middleware/auth.js";
 import { validateUserRequest } from "../middleware/validation.js";
 
-const router = express.Router();
-
-//Ruta para crear Usuario
+const router = Router();
+//ruta para crear el usuario
 router.post("/", jwtCheck, createUser);
 
-//Ruta para actualizar Usuario
+//ruta para actualizar el usuario
 router.put("/", jwtCheck, jwtParse, validateUserRequest, updateUser);
 
-//Ruta para obtener un usuario específico
+//ruta pra obtener un usuario
 router.get("/", jwtCheck, jwtParse, getUser);
-
 export default router;

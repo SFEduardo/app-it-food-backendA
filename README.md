@@ -1,7 +1,5 @@
-#app-itz-food-backend
-
-#Compilacion
+# app-itz-food-backend
+# Compilacion
 npm run build
-
-#Ejecución
-npm run dev
+# Ejecucion
+npm run start

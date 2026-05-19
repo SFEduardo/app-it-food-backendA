@@ -2,16 +2,19 @@ import type { Request, Response } from "express";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
+import morgan from "morgan";
+import { v2 as cloudinary } from "cloudinary";
 
-//Instanciamos dotenv para cargar las variables de entorno desde el archivo .env
+//Iniciamos dotenv
 dotenv.config();
 
-//importamos el archvo de rutas para usuarios
-import userRoutes from "./routes/userRoutes.js"; //<--- rutas de usuarios
-import morgan from "morgan";
+//Importamos archivo de rutas para usuarios
+import userRoutes from "./routes/userRoutes.js";
 
-//Nos conectamos a la base de datos
+//importamos archivo de rutas para el restaurante
+import restauranteRoutes from "./routes/restauranteRoutes.js";
+//Nos nocectamos a la BD
 mongoose
   .connect(process.env.DB_CONNECTION_STRING as string)
   .then(() => {
@@ -22,6 +25,15 @@ mongoose
     console.log("Error al conectar a la base de datos");
     console.log(error);
   });
+//configuracion del cloudinary
+const cloud_name = process.env.CLOUDINARY_CLOUD_NAME || "";
+const api_key = process.env.CLOUDINARY_API_KEY || "";
+const api_secret = process.env.CLOUDINARY_API_SECRET || "";
+cloudinary.config({
+  cloud_name: cloud_name,
+  api_key: api_key,
+  api_secret: api_secret,
+});
 
 const app = express();
 app.use(express.json());
@@ -29,19 +41,16 @@ app.use(cors());
 app.use(morgan("dev"));
 
 app.get("/health", async (req: Request, res: Response) => {
-  res.send("Hola mundo desde Express y TypeScript!!!");
+  res.send({ message: "!Servidor OK!" });
 });
-
-//Request <--- Es un objeto para recibir datods del front
-//Response <--- Es un objeto para enviar datos al front
-
-app.use("/api/user", userRoutes);
-
+//Request objeto para recibir datos del front
+//Response objeto para enviar datos de respuesta al Front
 app.get("/", async (req: Request, res: Response) => {
   res.redirect("/health");
 });
-
+app.use("/api/user", userRoutes);
+app.use("/api/restaurante", restauranteRoutes);
 const port = process.env.port || 3000;
 app.listen(port, () => {
-  console.log("App corriendo en el puerto " + port);
+  console.log("App corriendo en el puerto: " + port);
 });
