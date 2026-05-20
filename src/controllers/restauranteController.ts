@@ -86,7 +86,7 @@ export const updateRestaurante = async (req: Request, res: Response) => {
 
 export const searchRestaurante = async (req: Request, res: Response) => {
   try {
-    const city = req.params.city;
+    const city = req.params.city as string;
     const searchQuery = (req.query.searchQuery as string) || "";
     const selectedCuisines = (req.query.selectedCuisines as string) || "";
     const sortOption = (req.query.sortOption as string) || "lastUpdated";
