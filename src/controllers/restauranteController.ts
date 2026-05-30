@@ -8,7 +8,7 @@ export const getRestaurante = async (req: Request, res: Response) => {
   try {
     const restaurante = await Restaurante.findOne({ user: req.userId });
     if (!restaurante) {
-      return res.status(404).json({ message: "Restaurante no encontrado" });
+      res.status(404).json({ message: "Restaurante no encontrado" });
     }
     res.json(restaurante);
   } catch (error) {
@@ -29,18 +29,10 @@ export const createRestaurante = async (req: Request, res: Response) => {
         .json({ message: "El restaurante para este usuario ya existe" });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Se requiere una imagen" });
-    }
-
-    const image = req.file as Express.Multer.File;
-    const base64Image = Buffer.from(image.buffer).toString("base64");
-    const dataUri = "data:" + image.mimetype + ";base64," + base64Image;
-
-    const uploadResponse = await cloudinary.v2.uploader.upload(dataUri);
+    const imageUrl = await uploadImage(req.file as Express.Multer.File);
 
     const restaurante = new Restaurante(req.body);
-    restaurante.imageUrl = uploadResponse.url;
+    restaurante.imageUrl = imageUrl;
     restaurante.user = new mongoose.Types.ObjectId(req.userId);
     restaurante.lastUpdated = new Date();
 
@@ -54,48 +46,59 @@ export const createRestaurante = async (req: Request, res: Response) => {
 
 export const updateRestaurante = async (req: Request, res: Response) => {
   try {
-    const restaurante = await Restaurante.findOne({ user: req.userId });
+    let restaurante = await Restaurante.findOne({ user: req.userId });
+
     if (!restaurante) {
-      return res.status(404).json({ message: "Restaurante no encontrado" });
+      res.status(404).json({ message: "Restaurante no encontrado" });
     }
-
-    restaurante.restauranteName = req.body.restauranteName;
-    restaurante.city = req.body.city;
-    restaurante.country = req.body.country;
-    restaurante.deliverPrice = Number(req.body.deliverPrice);
-    restaurante.estimatedDeliveryTime = Number(req.body.estimatedDeliveryTime);
-    restaurante.cuisines = req.body.cuisines;
-    restaurante.menuItems = req.body.menuItems;
-    restaurante.lastUpdated = new Date();
-
+    restaurante!.restauranteName = req.body.restauranteName;
+    restaurante!.city = req.body.city;
+    restaurante!.country = req.body.country;
+    restaurante!.deliverPrice = req.body.deliverPrice;
+    restaurante!.estimatedDeliveryTime = req.body.estimatedDeliveryTime;
+    restaurante!.cuisines = req.body.cuisines;
+    restaurante!.menuItems = req.body.menuItems;
+    restaurante!.lastUpdated = new Date();
     if (req.file) {
-      const image = req.file as Express.Multer.File;
-      const base64Image = Buffer.from(image.buffer).toString("base64");
-      const dataUri = "data:" + image.mimetype + ";base64," + base64Image;
-      const uploadResponse = await cloudinary.v2.uploader.upload(dataUri);
-      restaurante.imageUrl = uploadResponse.url;
+      const imageUrl = await uploadImage(req.file as Express.Multer.File);
+      restaurante!.imageUrl = imageUrl;
     }
 
-    await restaurante.save();
-    res.json(restaurante);
+    await restaurante?.save();
+    res.status(200).send(restaurante);
   } catch (error) {
-    console.error("Error al actualizar el restaurante:", error);
+    console.log(error);
     res.status(500).json({ message: "Error al actualizar el restaurante" });
   }
 };
 
-export const searchRestaurante = async (req: Request, res: Response) => {
+const uploadImage = async (file: Express.Multer.File) => {
+  const image = file;
+  const base64Image = Buffer.from(image.buffer).toString("base64");
+  const dataUri = "data:" + image.mimetype + ";base64," + base64Image;
+
+  const uploadResponse = await cloudinary.v2.uploader.upload(dataUri);
+
+  return uploadResponse.url;
+};
+
+export const searchRestaurante = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
   try {
     const city = req.params.city as string;
     const searchQuery = (req.query.searchQuery as string) || "";
     const selectedCuisines = (req.query.selectedCuisines as string) || "";
-    const sortOption = (req.query.sortOption as string) || "lastUpdated";
+    const sortOptions = (req.query.sortOptions as string) || "lastUpdated";
     const page = parseInt(req.query.page as string) || 1;
 
     let query: any = {};
+
     query["city"] = new RegExp(city, "i");
 
     const cityCheck = await Restaurante.countDocuments(query);
+
     if (cityCheck === 0) {
       return res.status(404).json({
         data: [],
@@ -121,30 +124,44 @@ export const searchRestaurante = async (req: Request, res: Response) => {
         { cuisines: { $in: [searchRegex] } },
       ];
     }
-
     const pageSize = 10;
+
     const skip = (page - 1) * pageSize;
 
-    const restaurantes = await Restaurante.find(query)
-      .sort({ [sortOption]: 1 })
+    const restaurantsSearchResult = await Restaurante.find(query)
+      .sort({ [sortOptions]: 1 })
       .skip(skip)
       .limit(pageSize)
       .lean();
-
     const total = await Restaurante.countDocuments(query);
 
     const response = {
-      data: restaurantes,
+      data: restaurantsSearchResult,
       pagination: {
         total,
         page,
         pages: Math.ceil(total / pageSize),
       },
     };
-
     res.json(response);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Error al obtener restaurantes" });
+    res.status(500).json({ message: "Error al buscar el restaurante" });
+  }
+};
+
+export const getRestauranteById = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
+  try {
+    const restaurante = await Restaurante.findById(req.params.restaurantId);
+    if (!restaurante) {
+      return res.status(404).json({ message: "Restaurante no encontrado" });
+    }
+    res.json(restaurante);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error al obtener el restaurante" });
   }
 };

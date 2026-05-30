@@ -1,6 +1,11 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose, { InferSchemaType } from "mongoose";
 
 const menuItemSchema = new mongoose.Schema({
+  _id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    default: () => new mongoose.Types.ObjectId(),
+  },
   name: {
     type: String,
     required: true,
@@ -10,6 +15,7 @@ const menuItemSchema = new mongoose.Schema({
     required: true,
   },
 });
+export type MenuItemType = InferSchemaType<typeof menuItemSchema>;
 
 // El restaurante se asocia a un usuario que es el administrador
 // Del restaurante mediante un ID

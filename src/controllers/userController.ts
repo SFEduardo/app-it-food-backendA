@@ -23,7 +23,7 @@ export const createUser = async (req: Request, res: Response): Promise<any> => {
 export const updateUser = async (req: Request, res: Response): Promise<any> => {
   try {
     const { name, address, city, country } = req.body;
-    //Obtenemos los datos del usuario que inicio sesion
+    // Se obtienen los datos del usuario que inicio sesion
     const user = await User.findById(req.userId);
     if (!user) {
       return res.status(401).json({ message: "Usuario no encontrado" });
@@ -32,9 +32,9 @@ export const updateUser = async (req: Request, res: Response): Promise<any> => {
     user!.address = address;
     user!.city = city;
     user!.country = country;
-    //Guardamos el usuario en la base de datos
+    // Se guarda el usuario en la base de datos
     await user.save();
-    res.send(user); //Enviamos al frontend los datos del usuario guardado
+    res.send(user); // Se envian al frontend los datos del usuario guardado
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Error al actualizar el usuario" });

@@ -30,7 +30,7 @@ export const jwtParse = async (req:Request, res:Response, next:NextFunction):Pro
     console.log('jwtParse - Autorizacion denegada');
     return res.status(401).json({message:'Autorizacion denegada'});
   }
-  //obtenemos el token del header
+  // Se obtiene el token del header
   //split = ["Bearer","Token"]
   //split divide por el caracter espacio " " la cadena
   const token = authorization.split(" ")[1] as string;
@@ -41,7 +41,7 @@ export const jwtParse = async (req:Request, res:Response, next:NextFunction):Pro
     const decoded = jwt.decode(token) as jwt.JwtPayload;
     //el elemento sub del token contiene el id del usuario
     const auth0Id = decoded.sub||'';
-    //buscamos el usuario en la base de datos
+    // Se busca el usuario en la base de datos
     const user = await userModel.findOne({auth0Id});
     if(!user){
       console.log("jwtParse - user encontrado - Autorizacion denegada");

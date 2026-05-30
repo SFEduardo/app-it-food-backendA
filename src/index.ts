@@ -1,3 +1,4 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import type { Request, Response } from "express";
 import express from "express";
 import cors from "cors";
@@ -14,9 +15,13 @@ import userRoutes from "./routes/userRoutes.js";
 
 //importamos archivo de rutas para el restaurante
 import restauranteRoutes from "./routes/restauranteRoutes.js";
+//importamos la ruta para ordenes
+import orderRoutes from "./routes/orderRoutes.js";
 //Nos nocectamos a la BD
 mongoose
-  .connect(process.env.DB_CONNECTION_STRING as string)
+  .connect(process.env.DB_CONNECTION_STRING as string, {
+    tlsAllowInvalidCertificates: true // Soluciona el error de certificado SSL en Mac
+  })
   .then(() => {
     console.log("Base de datos conectada correctamente");
     console.log(process.env.DB_CONNECTION_STRING);
@@ -36,9 +41,11 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(express.json());
 app.use(cors());
 app.use(morgan("dev"));
+
+app.use("/api/order/checkout/webhook", express.raw({ type: "*/*" }));
+app.use(express.json());
 
 app.get("/health", async (req: Request, res: Response) => {
   res.send({ message: "!Servidor OK!" });
@@ -50,7 +57,10 @@ app.get("/", async (req: Request, res: Response) => {
 });
 app.use("/api/user", userRoutes);
 app.use("/api/restaurante", restauranteRoutes);
+app.use("/api/order", orderRoutes);
 const port = process.env.port || 3000;
 app.listen(port, () => {
   console.log("App corriendo en el puerto: " + port);
 });
+
+// Forzando recarga de variables de entorno de nodemon
